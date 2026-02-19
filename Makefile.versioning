@@ -1,0 +1,4 @@
+VER_GIT_VERSION = $$(git describe --tags --abbrev=0)
+VER_GIT_OFFSET = $$(git rev-list $(VER_GIT_VERSION)..HEAD --count)
+VER_GIT_HASH = $$(git rev-parse --short HEAD)
+VER_VERSION_STRING = $(VER_GIT_VERSION)-$(VER_GIT_OFFSET)-$(VER_GIT_HASH)

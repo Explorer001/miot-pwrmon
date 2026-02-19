@@ -1,0 +1,6 @@
+[submodule "RIOT"]
+	path = RIOT
+	url = https://github.com/RIOT-OS/RIOT.git
+[submodule "miot-pcbs"]
+	path = miot-pcbs
+	url = git@code.ovgu.de:comsys-group/testbed/miot-pcbs.git
