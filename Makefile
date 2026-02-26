@@ -29,4 +29,6 @@ include $(RIOTBASE)/Makefile.include
 .PHONY: release
 
 release:
-	cp $(BINDIR)/$(APPLICATION).elf $(APPLICATION)_$(VER_VERSION_STRING).elf
+	cp $(BINDIR)/esp_bootloader/bootloader.bin bootloader_$(VER_VERSION_STRING).bin
+	cp $(BINDIR)/partitions.bin partitions_$(VER_VERSION_STRING).bin
+	cp $(BINDIR)/$(APPLICATION).elf.bin $(APPLICATION)_$(VER_VERSION_STRING).elf.bin
