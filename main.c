@@ -17,10 +17,17 @@
 
 #include <stdio.h>
 
+#include "shell.h"
+
 #include "src/pwrmon.h"
+
+static char shell_line_buf[SHELL_DEFAULT_BUFSIZE];
 
 int main(void)
 {
     (void)miot_pwrmon_init();
+
+    shell_run(NULL, shell_line_buf, sizeof(shell_line_buf));
+
     return 0;
 }

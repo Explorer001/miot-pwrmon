@@ -20,11 +20,40 @@
 #define ENABLE_DEBUG (1)
 #include "debug.h"
 
+#include "event.h"
+#include "ztimer.h"
+#include "thread.h"
+
 #define INA3221_NUMOF 2
 
-struct pwrmon {
+/** Power monitor contexts */
+static struct pwrmon {
+    /** INA ADC device descriptor */
     ina3221_t dev;
+    /** Timer for measurement */
+    ztimer_t timer;
+    /** Event for timer interrupt escape */
+    event_t event;
 } miot_pwrmon[INA3221_NUMOF];
+
+/** Power monitor thread components */
+kernel_pid_t pwrmon_pid = KERNEL_PID_UNDEF;
+static char pwrmon_stack[2048];
+
+/** Event queue used by the power monitor thread */
+static event_queue_t pwrmon_queue;
+
+static void *pwrmon_thread(void *arg)
+{
+    event_queue_init(&pwrmon_queue);
+
+    event_t *event;
+    while ((event = event_wait(&pwrmon_queue))) {
+        DEBUG("Got event");
+    }
+
+    return NULL;
+}
 
 int miot_pwrmon_init(void)
 {
@@ -39,6 +68,9 @@ int miot_pwrmon_init(void)
         DEBUG("Failed to initialize ina3221 0\n");
         return ret;
     }
+
+    pwrmon_pid =
+        thread_create(pwrmon_stack, sizeof(pwrmon_stack), 7, 0, pwrmon_thread, NULL, "pwrmon");
 
     return 0;
 }

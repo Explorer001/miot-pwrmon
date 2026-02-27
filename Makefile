@@ -13,6 +13,8 @@ RIOTBASE ?= $(CURDIR)/RIOT
 USEMODULE += shell
 USEMODULE += shell_cmds_default
 USEMODULE += saul_default
+USEMODULE += event
+USEMODULE += ztimer_usec
 
 #######################
 # Development options #
