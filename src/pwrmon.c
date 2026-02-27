@@ -15,12 +15,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
+#include "ina3221_params.h"
 
-#include "src/pwrmon.h"
+#define ENABLE_DEBUG (1)
+#include "debug.h"
 
-int main(void)
+#define INA3221_NUMOF 2
+
+struct pwrmon {
+    ina3221_t dev;
+} miot_pwrmon[INA3221_NUMOF];
+
+int miot_pwrmon_init(void)
 {
-    (void)miot_pwrmon_init();
+    int ret = ina3221_init(&miot_pwrmon[0].dev, &ina3221_params[0]);
+    if (ret != 0) {
+        DEBUG("Failed to initialize ina3221 0\n");
+        return ret;
+    }
+
+    ret = ina3221_init(&miot_pwrmon[1].dev, &ina3221_params[1]);
+    if (ret != 0) {
+        DEBUG("Failed to initialize ina3221 0\n");
+        return ret;
+    }
+
     return 0;
 }

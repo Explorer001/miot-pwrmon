@@ -12,6 +12,7 @@ RIOTBASE ?= $(CURDIR)/RIOT
 ####################
 USEMODULE += shell
 USEMODULE += shell_cmds_default
+USEMODULE += saul_default
 
 #######################
 # Development options #
@@ -19,6 +20,9 @@ USEMODULE += shell_cmds_default
 DEVELHELP ?= 1
 QUIET ?= 1
 WERROR ?= 0
+
+SRC += main.c
+SRC += $(wildcard src/*.c)
 
 #include Makefile.versioning
 
