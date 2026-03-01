@@ -150,6 +150,12 @@ reschedule:
     (void)ztimer_set(ZTIMER_USEC, &mon->timer, mon->interval_us);
 }
 
+static void _event_handler(event_t *event)
+{
+    struct pwrmon *mon = container_of(event, struct pwrmon, event);
+    _measure(mon);
+}
+
 static void *pwrmon_thread(void *arg)
 {
     event_queue_init(&pwrmon_queue);
@@ -157,8 +163,7 @@ static void *pwrmon_thread(void *arg)
     event_t *event;
     while ((event = event_wait(&pwrmon_queue))) {
         DEBUG("Got event");
-        struct pwrmon *mon = container_of(event, struct pwrmon, event);
-        _measure(mon);
+        event->handler(event);
     }
 
     return NULL;
@@ -188,10 +193,12 @@ int miot_pwrmon_init(void)
     miot_pwrmon[0].channel_shift = CHANNELS_MON0_SHIFT;
     miot_pwrmon[0].timer.arg = &miot_pwrmon[0];
     miot_pwrmon[0].timer.callback = _pwrmon_timer_cb;
+    miot_pwrmon[0].event.handler = _event_handler;
 
     miot_pwrmon[1].channel_shift = CHANNELS_MON1_SHIFT;
     miot_pwrmon[1].timer.arg = &miot_pwrmon[1];
     miot_pwrmon[1].timer.callback = _pwrmon_timer_cb;
+    miot_pwrmon[1].event.handler = _event_handler;
 
     pwrmon_pid =
         thread_create(pwrmon_stack, sizeof(pwrmon_stack), 7, 0, pwrmon_thread, NULL, "pwrmon");
@@ -365,7 +372,7 @@ static int _configure(struct pwrmon *mon, uint16_t cfg)
 
 int miot_pwrmon_start_meas(const struct pwrmon_cfg *cfg, pwrmon_cb cb)
 {
-    if ((cfg->channels & MIOT_PWRMON_CHANNEL_MASK) != 0) {
+    if ((cfg->channels & ~MIOT_PWRMON_CHANNEL_MASK) != 0) {
         DEBUG("Invalid channel mask: 0x%02X\n", cfg->channels);
         return -EINVAL;
     }
