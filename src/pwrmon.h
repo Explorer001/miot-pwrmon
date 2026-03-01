@@ -17,6 +17,13 @@
 
 #pragma once
 
+#include <stdint.h>
+
+#include "ina3221_params.h"
+
+#define MIOT_PWRMON_CHANNEL_MASK 0x3F
+
+/** Available power monitor channels */
 enum miot_pwrmon_channel {
     MIOT_PWRMON_CHANNEL_LDO = 0x01,            /**< LDO power supply */
     MIOT_PWRMON_CHANNEL_RFM95W = 0x02,         /**< RFM95W 868MHz LoRa Transceiver */
@@ -26,4 +33,38 @@ enum miot_pwrmon_channel {
     MIOT_PWRMON_CHANNEL_AT86 = 0x20,           /**< AT86 IEEE 802.15.4 Transceiver */
 };
 
+/** Power monitor operation mode */
+enum miot_pwrmon_op_mode {
+    MIOT_PWRMON_OP_MODE_CURRENT, /**< Only measure current */
+    MIOT_PWRMON_OP_MODE_VOLTAGE, /**< Only measure voltage */
+    MIOT_PWRMON_OP_MODE_BOTH,    /**< Measure current and voltage*/
+};
+
+/** Configuration for the power monitor */
+struct pwrmon_cfg {
+    /** Bitmap of enabled channels enabled for measurement */
+    uint8_t channels;
+    /** Operation mode */
+    enum miot_pwrmon_op_mode op_mode;
+    /** Shunt voltage conversion time */
+    ina3221_conv_time_shunt_adc_t sadc;
+    /** Bus voltage conversion time */
+    ina3221_conv_time_bus_adc_t badc;
+    /** Number of samples for averaging */
+    ina3221_num_samples_t num_samples;
+};
+
+/**
+ * Initialize the power monitor.
+ *
+ * @return 0 on success. Otherwise a negative error code. 
+ */
 int miot_pwrmon_init(void);
+
+/**
+ * Start the power monitor measurement.
+ *
+ * @param cfg The power monitor configuration.
+ * @return 0 on success. Otherwise a negative error code. 
+ */
+int miot_pwrmon_start_meas(const struct pwrmon_cfg *cfg);
