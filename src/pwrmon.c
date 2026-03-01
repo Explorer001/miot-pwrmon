@@ -60,6 +60,18 @@ static char pwrmon_stack[2048];
 /** Event queue used by the power monitor thread */
 static event_queue_t pwrmon_queue;
 
+/** Flag if the measurement should continue */
+static bool _run_measurement;
+
+/** Shunt voltage drop */
+static int32_t _shunt_uv[INA3221_NUM_CH * INA3221_NUMOF];
+/** Bus voltages */
+static int16_t _bus_mv[INA3221_NUM_CH * INA3221_NUMOF];
+/** Resulting current from shunt voltage drops */
+static int32_t _current_ua[INA3221_NUM_CH * INA3221_NUMOF];
+
+static pwrmon_cb _user_meas_cb;
+
 /** Lookup table for sadc/badc conversion time in microseconds */
 static uint32_t sadc_badc_lut_usec[] = {
     140, 204, 332, 588, 1100, 2116, 4156, 8244,
@@ -70,6 +82,74 @@ static uint32_t num_samples_lut[] = {
     1, 4, 16, 64, 128, 256, 512, 1024,
 };
 
+/**
+ * Resets the power monitors. 
+ */
+static void _reset_monitors(void)
+{
+    (void)ina3221_reset(&miot_pwrmon[0].dev);
+    (void)ina3221_reset(&miot_pwrmon[1].dev);
+}
+
+/**
+ * Measure the configured values of a power monitor.
+ *
+ * @param mon The monitor to measure.
+ */
+static void _measure(struct pwrmon *mon)
+{
+    uint16_t flags;
+
+    if (_run_measurement == false) {
+        _reset_monitors();
+        return;
+    }
+
+    int ret = ina3221_read_flags(&mon->dev, &flags);
+    if (ret != 0) {
+        DEBUG("Failed to read flags: %d\n", ret);
+        goto reschedule;
+    }
+
+    if ((flags & INA3221_FLAG_CONV_READY) == 0) {
+        DEBUG("Measurement not ready. Retrying...\n");
+        (void)ztimer_set(ZTIMER_USEC, &mon->timer, 10);
+        return;
+    }
+
+    ina3221_mode_t mode;
+    ina3221_get_mode(&mon->dev, &mode);
+
+    ina3221_ch_t channels;
+    ina3221_get_enable_channel(&mon->dev, &channels);
+
+    int32_t *suv = NULL;
+    int16_t *bmv = NULL;
+    int32_t *cua = NULL;
+
+    if (mode == INA3221_MODE_CONTINUOUS_SHUNT_ONLY || mode == INA3221_MODE_TRIGGER_SHUNT_ONLY ||
+        mode == INA3221_MODE_CONTINUOUS_SHUNT_BUS || mode == INA3221_MODE_TRIGGER_SHUNT_BUS) {
+        suv = _shunt_uv + mon->channel_shift;
+        cua = _current_ua + mon->channel_shift;
+        channels &= ina3221_read_shunt_uv(&mon->dev, suv, NULL);
+        ina3221_calculate_current_ua(channels, mon->dev.params.rshunt_mohm, suv, cua);
+    }
+    if (mode == INA3221_MODE_CONTINUOUS_BUS_ONLY || mode == INA3221_MODE_TRIGGER_BUS_ONLY ||
+        mode == INA3221_MODE_CONTINUOUS_SHUNT_BUS || mode == INA3221_MODE_TRIGGER_SHUNT_BUS) {
+        bmv = _bus_mv + mon->channel_shift;
+        channels &= ina3221_read_bus_mv(&mon->dev, bmv, NULL);
+    }
+
+    uint8_t mapped_channels = channels << mon->channel_shift;
+
+    if (_user_meas_cb) {
+        _user_meas_cb(mapped_channels, cua, bmv);
+    }
+
+reschedule:
+    (void)ztimer_set(ZTIMER_USEC, &mon->timer, mon->interval_us);
+}
+
 static void *pwrmon_thread(void *arg)
 {
     event_queue_init(&pwrmon_queue);
@@ -77,6 +157,8 @@ static void *pwrmon_thread(void *arg)
     event_t *event;
     while ((event = event_wait(&pwrmon_queue))) {
         DEBUG("Got event");
+        struct pwrmon *mon = container_of(event, struct pwrmon, event);
+        _measure(mon);
     }
 
     return NULL;
@@ -281,16 +363,7 @@ static int _configure(struct pwrmon *mon, uint16_t cfg)
     return 0;
 }
 
-/**
- * Resets the power monitors. 
- */
-static void _reset_monitors(void)
-{
-    (void)ina3221_reset(&miot_pwrmon[0].dev);
-    (void)ina3221_reset(&miot_pwrmon[1].dev);
-}
-
-int miot_pwrmon_start_meas(const struct pwrmon_cfg *cfg)
+int miot_pwrmon_start_meas(const struct pwrmon_cfg *cfg, pwrmon_cb cb)
 {
     if ((cfg->channels & MIOT_PWRMON_CHANNEL_MASK) != 0) {
         DEBUG("Invalid channel mask: 0x%02X\n", cfg->channels);
@@ -347,5 +420,14 @@ int miot_pwrmon_start_meas(const struct pwrmon_cfg *cfg)
         }
     }
 
+    _run_measurement = true;
+    _user_meas_cb = cb;
+
     return 0;
+}
+
+void miot_pwrmon_stop_meas(void)
+{
+    _run_measurement = false;
+    _user_meas_cb = NULL;
 }

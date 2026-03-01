@@ -55,6 +55,15 @@ struct pwrmon_cfg {
 };
 
 /**
+ * Measurement callback.
+ *
+ * @param channels Bitmap of channels valid in the result arrays. Refer to miot_pwrmon_channel.
+ * @param current_ua Array of currents in microampere on the channels. @c NULL if not activated.
+ * @param bus_mv Array of bus voltages in millivolt on the channels. @c NULL if not activated.
+ */
+typedef void (*pwrmon_cb)(uint8_t channels, int32_t *current_ua, int16_t *bus_mv);
+
+/**
  * Initialize the power monitor.
  *
  * @return 0 on success. Otherwise a negative error code. 
@@ -65,6 +74,12 @@ int miot_pwrmon_init(void);
  * Start the power monitor measurement.
  *
  * @param cfg The power monitor configuration.
+ * @param cb Callback for measurement results.
  * @return 0 on success. Otherwise a negative error code. 
  */
-int miot_pwrmon_start_meas(const struct pwrmon_cfg *cfg);
+int miot_pwrmon_start_meas(const struct pwrmon_cfg *cfg, pwrmon_cb cb);
+
+/**
+ * Stop the power monitor measurement.
+ */
+void miot_pwrmon_stop_meas(void);
