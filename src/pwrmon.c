@@ -133,11 +133,17 @@ static void _measure(struct pwrmon *mon)
         cua = _current_ua + mon->channel_shift;
         channels &= ina3221_read_shunt_uv(&mon->dev, suv, NULL);
         ina3221_calculate_current_ua(channels, mon->dev.params.rshunt_mohm, suv, cua);
+
+        /* Reset to start of array for callback */
+        cua = _current_ua;
     }
     if (mode == INA3221_MODE_CONTINUOUS_BUS_ONLY || mode == INA3221_MODE_TRIGGER_BUS_ONLY ||
         mode == INA3221_MODE_CONTINUOUS_SHUNT_BUS || mode == INA3221_MODE_TRIGGER_SHUNT_BUS) {
         bmv = _bus_mv + mon->channel_shift;
         channels &= ina3221_read_bus_mv(&mon->dev, bmv, NULL);
+
+        /* Reset to start of array for callback */
+        bmv = _bus_mv;
     }
 
     uint8_t mapped_channels = channels << mon->channel_shift;
