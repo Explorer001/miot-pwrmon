@@ -248,7 +248,7 @@ static int _pwrmon_measure(int argc, char **argv)
         return 1;
     }
 
-    printf("--- START 0x%02lX %s %u %u %u ---\r\n", chan_map, argv[3], sadc, badc, samples);
+    printf("\r\n--- START 0x%02lX %s %u %u %u ---\r\n", chan_map, argv[3], sadc, badc, samples);
 
     return 0;
 }
