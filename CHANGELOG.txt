@@ -3,3 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [unreleased]
+
+### Added
+
+* Continuous current and voltage measurement
+* Configurable conversion and averaging settings
+* Ppower monitor shell command
