@@ -21,6 +21,7 @@
 
 #include "shell.h"
 #include "pwrmon.h"
+#include "ztimer.h"
 
 static void _usage(void)
 {
@@ -175,11 +176,13 @@ static int _pwrmon_map_samples(unsigned int val, ina3221_num_samples_t *samples)
 
 static void _pwrmon_cb(uint8_t channels, int32_t *current_ua, int16_t *bus_mv)
 {
+    ztimer_now_t ts = ztimer_now(ZTIMER_MSEC);
+
     for (uint8_t i = 0; i < 6; i++) {
         if ((channels & (1 << i)) == 0)
             continue;
 
-        printf("ch=%u", i);
+        printf("ch=%u, ts=%lu", i, ts);
         if (bus_mv) {
             printf(", bus=%" PRId16 " mV", bus_mv[i]);
         }
