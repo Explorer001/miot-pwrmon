@@ -192,7 +192,7 @@ int miot_pwrmon_init(void)
 
     ret = ina3221_init(&miot_pwrmon[1].dev, &ina3221_params[1]);
     if (ret != 0) {
-        DEBUG("Failed to initialize ina3221 0\n");
+        DEBUG("Failed to initialize ina3221 1\n");
         return ret;
     }
 
@@ -210,6 +210,11 @@ int miot_pwrmon_init(void)
         thread_create(pwrmon_stack, sizeof(pwrmon_stack), 7, 0, pwrmon_thread, NULL, "pwrmon");
 
     return 0;
+}
+
+bool miot_pwrmon_initialized(void)
+{
+    return pwrmon_pid != KERNEL_PID_UNDEF;
 }
 
 /**

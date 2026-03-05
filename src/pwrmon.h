@@ -71,6 +71,13 @@ typedef void (*pwrmon_cb)(uint8_t channels, int32_t *current_ua, int16_t *bus_mv
 int miot_pwrmon_init(void);
 
 /**
+ * Check if the power monitor is initialized;
+ *
+ * @return @c true if initialized, @c false otherwise.
+ */
+bool miot_pwrmon_initialized(void);
+
+/**
  * Start the power monitor measurement.
  *
  * @param cfg The power monitor configuration.
