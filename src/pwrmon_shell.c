@@ -174,6 +174,8 @@ static int _pwrmon_map_samples(unsigned int val, ina3221_num_samples_t *samples)
     return 0;
 }
 
+static ztimer_now_t meas_start_ts = 0;
+
 static void _pwrmon_cb(uint8_t channels, int32_t *current_ua, int16_t *bus_mv)
 {
     ztimer_now_t ts = ztimer_now(ZTIMER_MSEC);
@@ -182,16 +184,28 @@ static void _pwrmon_cb(uint8_t channels, int32_t *current_ua, int16_t *bus_mv)
         if ((channels & (1 << i)) == 0)
             continue;
 
-        printf("ch=%u, ts=%lu", i, ts);
+        printf("%u;%lu;", i, ts - meas_start_ts);
         if (bus_mv) {
-            printf(", bus=%" PRId16 " mV", bus_mv[i]);
+            printf("%" PRId16 ";", bus_mv[i]);
         }
+        else {
+            printf(";");
+        }
+
         if (current_ua) {
-            printf(", cur=%" PRId32 " uA", current_ua[i]);
+            printf("%" PRId32 "", current_ua[i]);
         }
         printf("\r\n");
     }
 }
+
+static uint16_t sadc_bads_lut[] = {
+    140, 204, 332, 588, 1100, 2116, 4156, 8244,
+};
+
+static uint16_t nsamples_lut[] = {
+    1, 4, 16, 64, 128, 256, 512, 1024,
+};
 
 static int _pwrmon_measure(int argc, char **argv)
 {
@@ -242,13 +256,22 @@ static int _pwrmon_measure(int argc, char **argv)
         return 1;
     }
 
+    meas_start_ts = ztimer_now(ZTIMER_MSEC);
+
     ret = miot_pwrmon_start_meas(&cfg, _pwrmon_cb);
     if (ret != 0) {
         printf("Failed to start measurement: %d\n", ret);
         return 1;
     }
 
-    printf("\r\n--- START 0x%02lX %s %u %u %u ---\r\n", chan_map, argv[3], sadc, badc, samples);
+    printf("\r\n");
+    printf("# Channels: 0x%02lX\r\n", chan_map);
+    printf("# Op mode : %s\r\n", argv[3]);
+    printf("# Sadc    : %u us\r\n", sadc_bads_lut[sadc]);
+    printf("# Badc    : %u us\r\n", sadc_bads_lut[badc]);
+    printf("# Samples : %u us\r\n", nsamples_lut[samples]);
+    printf("# Version : FIXME\r\n");
+    printf("channels;timestamp;voltage_mv;current_ua\r\n");
 
     return 0;
 }
