@@ -269,7 +269,7 @@ static int _pwrmon_measure(int argc, char **argv)
     printf("# Op mode : %s\r\n", argv[3]);
     printf("# Sadc    : %u us\r\n", sadc_bads_lut[sadc]);
     printf("# Badc    : %u us\r\n", sadc_bads_lut[badc]);
-    printf("# Samples : %u us\r\n", nsamples_lut[samples]);
+    printf("# Samples : %u\r\n", nsamples_lut[samples]);
     printf("# Version : FIXME\r\n");
     printf("channels;timestamp;voltage_mv;current_ua\r\n");
 
