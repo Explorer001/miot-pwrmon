@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+## v1.0.0 - 07.03.2026
+
 ### Added
 
 * Continuous current and voltage measurement
