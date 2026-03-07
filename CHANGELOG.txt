@@ -8,4 +8,5 @@ All notable changes to this project will be documented in this file.
 
 * Continuous current and voltage measurement
 * Configurable conversion and averaging settings
-* Ppower monitor shell command
+* Power monitor shell command
+* Measurement export as csv over serial
