@@ -270,7 +270,7 @@ static int _pwrmon_measure(int argc, char **argv)
     printf("# Sadc    : %u us\r\n", sadc_bads_lut[sadc]);
     printf("# Badc    : %u us\r\n", sadc_bads_lut[badc]);
     printf("# Samples : %u\r\n", nsamples_lut[samples]);
-    printf("# Version : FIXME\r\n");
+    printf("# Version : %s\r\n", MIOT_PWRMON_VERSION_STRING);
     printf("channels;timestamp;voltage_mv;current_ua\r\n");
 
     return 0;
@@ -291,7 +291,7 @@ static int _pwrmon_stop(void)
 static int _pwrmon_cmd(int argc, char **argv)
 {
     if (argc == 2 && strcmp(argv[1], "version") == 0) {
-        printf("FIXME\n");
+        printf("%s\r\n", MIOT_PWRMON_VERSION_STRING);
         return 0;
     }
     if (argc == 2 && strcmp(argv[1], "init") == 0) {

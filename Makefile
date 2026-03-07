@@ -27,9 +27,9 @@ WERROR ?= 0
 SRC += main.c
 SRC += $(wildcard src/*.c)
 
-#include Makefile.versioning
+include Makefile.versioning
 
-#CFLAGS += -DMIOT_PWRMON_VERSION_STRING="\"$(VER_VERSION_STRING)\""
+CFLAGS += -DMIOT_PWRMON_VERSION_STRING="\"$(VER_VERSION_STRING)\""
 
 include $(RIOTBASE)/Makefile.include
 
