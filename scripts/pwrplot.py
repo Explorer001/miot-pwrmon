@@ -83,7 +83,7 @@ def _get_first_spike_ts(meas: pd.DataFrame):
 
     return meas[meas.current_ua > threshold_current].iloc[0]['timestamp_ms']
 
-def process_files(measurement_name: str, reference_name: str, sync: bool):
+def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str):
     """
     Plot the power measurements and reference.
 
@@ -97,8 +97,21 @@ def process_files(measurement_name: str, reference_name: str, sync: bool):
     if reference_name != None:
         plot_ref = True
         ref = _load_file(reference_name)
+        num_labels = 2
     else:
         plot_ref = False
+        num_labels = 1
+
+    legend_lst = []
+
+    if legend != None:
+        legend_lst = legend.split(',')
+        # Reverse because reference is plotted first
+        legend_lst.reverse()
+
+        if len(legend_lst) != num_labels:
+            print('Wrong number of labels provided')
+            legend_lst = []
 
     if sync and plot_ref:
         meas_spike = _get_first_spike_ts(meas)
@@ -108,13 +121,15 @@ def process_files(measurement_name: str, reference_name: str, sync: bool):
 
         ref.timestamp_ms = ref.timestamp_ms - diff
 
-    if plot_ref:
-        ax = ref.plot(x='timestamp_ms', y='current_ua', xlabel='Timestamp (ms)', ylabel='Current (uA)', legend=False, color='tab:orange')
-    else:
-        ax = None
+    fig, ax = plt.subplots()
 
-    meas.plot(ax=ax, x='timestamp_ms', y='current_ua', xlabel='Timestamp (ms)', ylabel='Current (uA)', legend=False, color='tab:blue')
+    if plot_ref:
+        ref.plot(ax=ax,x='timestamp_ms', y='current_ua', xlabel='Zeit (ms)', ylabel='Strom (uA)', color='tab:orange')
+
+    meas.plot(ax=ax, x='timestamp_ms', y='current_ua', xlabel='Zeit (ms)', ylabel='Strom (uA)', color='tab:blue')
     
+    plt.legend(legend_lst)
+
     plt.show()
         
 
@@ -126,6 +141,7 @@ if __name__ == '__main__':
     parser.add_argument('file', help='Input file', type=str)
     parser.add_argument('reference', help='Reference power measurement', type=str, nargs='?')
     parser.add_argument('-s', '--sync', help='Synchronize file and reference on first power spike', action='store_true')
+    parser.add_argument('-l', '--legend', help='Comma separated list of labels for file and reference', type=str)
 
     args = parser.parse_args()
-    process_files(args.file, args.reference, args.sync)
+    process_files(args.file, args.reference, args.sync, args.legend)
