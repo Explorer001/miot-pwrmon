@@ -108,9 +108,13 @@ def process_files(measurement_name: str, reference_name: str, sync: bool):
 
         ref.timestamp_ms = ref.timestamp_ms - diff
 
-    ax = meas.plot(x='timestamp_ms', y='current_ua', xlabel='Timestamp (ms)', ylabel='Current (uA)', legend=False, color='tab:blue')
     if plot_ref:
-        ref.plot(ax=ax, x='timestamp_ms', y='current_ua', xlabel='Timestamp (ms)', ylabel='Current (uA)', legend=False, color='tab:orange')
+        ax = ref.plot(x='timestamp_ms', y='current_ua', xlabel='Timestamp (ms)', ylabel='Current (uA)', legend=False, color='tab:orange')
+    else:
+        ax = None
+
+    meas.plot(ax=ax, x='timestamp_ms', y='current_ua', xlabel='Timestamp (ms)', ylabel='Current (uA)', legend=False, color='tab:blue')
+    
     plt.show()
         
 
