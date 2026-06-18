@@ -83,13 +83,15 @@ def _get_first_spike_ts(meas: pd.DataFrame):
 
     return meas[meas.current_ua > threshold_current].iloc[0]['timestamp_ms']
 
-def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str):
+def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str, out: str):
     """
     Plot the power measurements and reference.
 
     measurement_name: The file name of the measurement file.
     reference_name: The file name of the reference file.
     sync: Synchronize measurements and reference on first spike.
+    legend: Plot legend names.
+    out: Output file name.
     """
 
     meas = _load_file(measurement_name)
@@ -130,7 +132,10 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
     
     plt.legend(legend_lst)
 
-    plt.show()
+    if out != None:
+        plt.savefig(f'{out}.svg', format='svg', dpi=1200, bbox_inches='tight')
+    else:
+        plt.show()
         
 
 if __name__ == '__main__':
@@ -142,6 +147,7 @@ if __name__ == '__main__':
     parser.add_argument('reference', help='Reference power measurement', type=str, nargs='?')
     parser.add_argument('-s', '--sync', help='Synchronize file and reference on first power spike', action='store_true')
     parser.add_argument('-l', '--legend', help='Comma separated list of labels for file and reference', type=str)
+    parser.add_argument('-o', '--out', help='Output file name (excluding file ending)', type=str)
 
     args = parser.parse_args()
-    process_files(args.file, args.reference, args.sync, args.legend)
+    process_files(args.file, args.reference, args.sync, args.legend, args.out)
