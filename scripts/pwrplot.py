@@ -83,6 +83,33 @@ def _get_first_spike_ts(meas: pd.DataFrame):
 
     return meas[meas.current_ua > threshold_current].iloc[0]['timestamp_ms']
 
+def _dump_meas_info(data: list, out: str):
+    """
+    Dump information regarding the measurement.
+
+    data: List of data to dump info from.
+    out: Name of the output file.
+    """
+    dump_tokens = []
+
+    for d in data:
+        df = d['df']
+
+        dump_tokens.append(f'{d['name']}:')
+        dump_tokens.append(f'\tmin   ={df.current_ua.min()}')
+        dump_tokens.append(f'\tmax   ={df.current_ua.max()}')
+        dump_tokens.append(f'\tmean  ={df.current_ua.mean()}')
+        dump_tokens.append(f'\tmedian={df.current_ua.median()}')
+
+    dump_str = '\n'.join(dump_tokens)
+
+    if out:
+        with open(f'{out}_info.txt', 'w') as f:
+            f.write(dump_str)
+    else:
+        print(dump_str)
+        
+
 def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str, out: str):
     """
     Plot the power measurements and reference.
@@ -123,6 +150,14 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
 
         ref.timestamp_ms = ref.timestamp_ms - diff
 
+    dump_data = []
+
+    dump_data.append({'df': meas, 'name': legend_lst[-1] if legend_lst else 'Measurement'})
+    if plot_ref:
+        dump_data.append({'df': ref, 'name': legend_lst[0] if legend_lst else 'Reference'})
+    
+    _dump_meas_info(dump_data, out)
+
     fig, ax = plt.subplots()
 
     if plot_ref:
@@ -133,7 +168,7 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
     plt.legend(legend_lst)
 
     if out != None:
-        plt.savefig(f'{out}.svg', format='svg', dpi=1200, bbox_inches='tight')
+        plt.savefig(f'{out}.pdf', format='pdf', bbox_inches='tight')
     else:
         plt.show()
         
