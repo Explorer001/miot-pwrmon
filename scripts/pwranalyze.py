@@ -59,7 +59,10 @@ if __name__ == '__main__':
     frames = []
 
     for file in args.file:
-        frame = process_file(file)
+        try:
+            frame = process_file(file)
+        except Exception as e:
+            print(f'Failed to analyze {file}: {e}')
         frames.append(frame)
 
     pwr_frame = pd.concat(frames, ignore_index=True)
