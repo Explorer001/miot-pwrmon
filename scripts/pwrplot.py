@@ -110,7 +110,7 @@ def _dump_meas_info(data: list, out: str):
         print(dump_str)
         
 
-def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str, out: str):
+def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str, out: str, fontsize: int):
     """
     Plot the power measurements and reference.
 
@@ -158,6 +158,8 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
     
     _dump_meas_info(dump_data, out)
 
+    plt.rcParams.update({'font.size': fontsize})
+
     fig, ax = plt.subplots()
 
     if plot_ref:
@@ -165,7 +167,7 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
 
     meas.plot(ax=ax, x='timestamp_ms', y='current_ua', xlabel='Zeit (ms)', ylabel='Strom (uA)', color='tab:blue')
     
-    plt.legend(legend_lst)
+    plt.legend(legend_lst, framealpha=0.5)
 
     if out != None:
         plt.savefig(f'{out}.pdf', format='pdf', bbox_inches='tight')
@@ -183,6 +185,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--sync', help='Synchronize file and reference on first power spike', action='store_true')
     parser.add_argument('-l', '--legend', help='Comma separated list of labels for file and reference', type=str)
     parser.add_argument('-o', '--out', help='Output file name (excluding file ending)', type=str)
+    parser.add_argument('-fs', '--font-size', type=int, default=14, help='Font size for the plot text')
 
     args = parser.parse_args()
-    process_files(args.file, args.reference, args.sync, args.legend, args.out)
+    process_files(args.file, args.reference, args.sync, args.legend, args.out, args.font_size)
