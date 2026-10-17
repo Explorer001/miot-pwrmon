@@ -110,7 +110,7 @@ def _dump_meas_info(data: list, out: str):
         print(dump_str)
         
 
-def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str, out: str, fontsize: int):
+def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str, out: str, fontsize: int, time_range: (int, int)):
     """
     Plot the power measurements and reference.
 
@@ -119,6 +119,8 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
     sync: Synchronize measurements and reference on first spike.
     legend: Plot legend names.
     out: Output file name.
+    fontsize: Plot fontsize
+    time_range: Time range to plot. If None the whole range is plotted
     """
 
     meas = _load_file(measurement_name)
@@ -150,6 +152,13 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
 
         ref.timestamp_ms = ref.timestamp_ms - diff
 
+    if time_range is not None:
+        start_ms, end_ms = time_range
+
+        meas = meas[meas['timestamp_ms'].between(start_ms, end_ms, inclusive='both')]
+        if plot_ref:
+            ref = ref[ref['timestamp_ms'].between(start_ms, end_ms, inclusive='both')]
+
     dump_data = []
 
     dump_data.append({'df': meas, 'name': legend_lst[-1] if legend_lst else 'Measurement'})
@@ -175,6 +184,13 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
         plt.show()
         
 
+def parse_range(val):
+    try:
+        start, end = val.split('-')
+        return (int(start), int(end))
+    except Exception as e:
+        raise argparse.ArgumentTypeError(f'Illegal range settings: {val}')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog='pwrplot',
@@ -186,6 +202,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--legend', help='Comma separated list of labels for file and reference', type=str)
     parser.add_argument('-o', '--out', help='Output file name (excluding file ending)', type=str)
     parser.add_argument('-fs', '--font-size', type=int, default=14, help='Font size for the plot text')
+    parser.add_argument('-r', '--range', type=parse_range, help='Range to plot in milliseconds. Format: \'<start_ms>-<end_ms>\'')
 
     args = parser.parse_args()
-    process_files(args.file, args.reference, args.sync, args.legend, args.out, args.font_size)
+    process_files(args.file, args.reference, args.sync, args.legend, args.out, args.font_size, args.range)
