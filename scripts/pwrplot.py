@@ -22,6 +22,9 @@ import matplotlib.pyplot as plt
 PWRMON_HEADER_ROW_MIOT=6
 PWRMON_HEADER_ROW_PPK=0
 
+EXPORT_FIG_WIDTH=12
+EXPORT_FIG_HEIGHT=8
+
 def _load_file_miot(file_name: str) -> pd.DataFrame:
     """
     Load the power measurements from the miot power monitor.
@@ -179,6 +182,9 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
     plt.legend(legend_lst, framealpha=0.5)
 
     if out != None:
+        fig.set_figheight(EXPORT_FIG_HEIGHT)
+        fig.set_figwidth(EXPORT_FIG_WIDTH)
+        plt.tight_layout()
         plt.savefig(f'{out}.pdf', format='pdf', bbox_inches='tight')
     else:
         plt.show()
