@@ -216,6 +216,8 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
 
         ax.add_collection(line_coll)
         ax.autoscale()
+        ax.set_xlabel('Zeit (ms)')
+        ax.set_ylabel('Strom (uA)')
 
     plt.legend(legend_lst, framealpha=0.5)
 
