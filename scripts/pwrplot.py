@@ -28,6 +28,8 @@ PWRMON_HEADER_ROW_PPK=0
 EXPORT_FIG_WIDTH=12
 EXPORT_FIG_HEIGHT=8
 
+RZ_FACTOR=0.6745
+
 def _load_file_miot(file_name: str) -> pd.DataFrame:
     """
     Load the power measurements from the miot power monitor.
@@ -203,7 +205,9 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
 
         meas.plot(ax=ax, x='timestamp_ms', y='current_ua', xlabel='Zeit (ms)', ylabel='Strom (uA)', color='tab:blue')
     else:
-        meas['current_ua_mod_z'] = (meas.current_ua - meas.current_ua.median()) / meas.current_ua.std()
+        mad = (meas.current_ua - meas.current_ua.median()).abs().median()
+
+        meas['current_ua_mod_z'] = (RZ_FACTOR * (meas.current_ua - meas.current_ua.median())) / mad
         meas['thres'] = meas.current_ua_mod_z.apply(lambda x: _z_map(x, z_thres))
 
         xy = np.column_stack([meas.timestamp_ms, meas.current_ua]).reshape(-1, 1, 2)
@@ -213,6 +217,12 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
 
         line_coll = LineCollection(line_segments, cmap=cmap)
         line_coll.set_array(meas.thres)
+
+        z_off = (z_thres * mad) / RZ_FACTOR
+        thres_lower = meas.current_ua.median() - z_off
+        thres_upper = meas.current_ua.median() + z_off
+
+        plt.fill_between(meas.timestamp_ms, [thres_lower], [thres_upper], color='orange', alpha=0.5)
 
         ax.add_collection(line_coll)
         ax.autoscale()
