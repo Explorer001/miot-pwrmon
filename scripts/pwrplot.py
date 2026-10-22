@@ -18,6 +18,9 @@
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+from matplotlib.collections import LineCollection
+import numpy as np
 
 PWRMON_HEADER_ROW_MIOT=6
 PWRMON_HEADER_ROW_PPK=0
@@ -111,9 +114,16 @@ def _dump_meas_info(data: list, out: str):
             f.write(dump_str)
     else:
         print(dump_str)
-        
 
-def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str, out: str, fontsize: int, time_range: (int, int)):
+def _z_map(x, thres):
+    if x <= -thres:
+        return -1
+    elif x >= thres:
+        return 1
+    else:
+        return 0
+
+def process_files(measurement_name: str, reference_name: str, sync: bool, legend: str, out: str, fontsize: int, time_range: (int, int), z_thres: float):
     """
     Plot the power measurements and reference.
 
@@ -124,6 +134,7 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
     out: Output file name.
     fontsize: Plot fontsize
     time_range: Time range to plot. If None the whole range is plotted
+    z_thres: Z threshold for spike detection
     """
 
     meas = _load_file(measurement_name)
@@ -135,6 +146,10 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
     else:
         plot_ref = False
         num_labels = 1
+
+    if plot_ref and z_thres is not None:
+        print('Plotting reference is not supported when using z-threshold')
+        return
 
     legend_lst = []
 
@@ -174,11 +189,26 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
 
     fig, ax = plt.subplots()
 
-    if plot_ref:
-        ref.plot(ax=ax,x='timestamp_ms', y='current_ua', xlabel='Zeit (ms)', ylabel='Strom (uA)', color='tab:orange')
+    if z_thres is None:
+        if plot_ref:
+            ref.plot(ax=ax,x='timestamp_ms', y='current_ua', xlabel='Zeit (ms)', ylabel='Strom (uA)', color='tab:orange')
 
-    meas.plot(ax=ax, x='timestamp_ms', y='current_ua', xlabel='Zeit (ms)', ylabel='Strom (uA)', color='tab:blue')
-    
+        meas.plot(ax=ax, x='timestamp_ms', y='current_ua', xlabel='Zeit (ms)', ylabel='Strom (uA)', color='tab:blue')
+    else:
+        meas['current_ua_mod_z'] = (meas.current_ua - meas.current_ua.median()) / meas.current_ua.std()
+        meas['thres'] = meas.current_ua_mod_z.apply(lambda x: _z_map(x, z_thres))
+
+        xy = np.column_stack([meas.timestamp_ms, meas.current_ua]).reshape(-1, 1, 2)
+        line_segments = np.concatenate([xy[:-1], xy[1:]], axis=1)
+
+        cmap = mcolors.ListedColormap(['tab:green', 'tab:blue', 'tab:red'])
+
+        line_coll = LineCollection(line_segments, cmap=cmap)
+        line_coll.set_array(meas.thres)
+
+        ax.add_collection(line_coll)
+        ax.autoscale()
+
     plt.legend(legend_lst, framealpha=0.5)
 
     if out != None:
@@ -209,6 +239,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--out', help='Output file name (excluding file ending)', type=str)
     parser.add_argument('-fs', '--font-size', type=int, default=14, help='Font size for the plot text')
     parser.add_argument('-r', '--range', type=parse_range, help='Range to plot in milliseconds. Format: \'<start_ms>-<end_ms>\'')
+    parser.add_argument('-z', '--z-threshold', type=float, help='Z Threshold for spike detection. If not given no spike detection is performed')
 
     args = parser.parse_args()
-    process_files(args.file, args.reference, args.sync, args.legend, args.out, args.font_size, args.range)
+    process_files(args.file, args.reference, args.sync, args.legend, args.out, args.font_size, args.range, args.z_threshold)
