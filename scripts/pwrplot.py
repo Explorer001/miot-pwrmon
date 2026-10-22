@@ -95,6 +95,7 @@ def _dump_meas_info(data: list, out: str):
 
     data: List of data to dump info from.
     out: Name of the output file.
+
     """
     dump_tokens = []
 
@@ -102,10 +103,25 @@ def _dump_meas_info(data: list, out: str):
         df = d['df']
 
         dump_tokens.append(f'{d['name']}:')
-        dump_tokens.append(f'\tmin   ={df.current_ua.min()}')
-        dump_tokens.append(f'\tmax   ={df.current_ua.max()}')
-        dump_tokens.append(f'\tmean  ={df.current_ua.mean()}')
-        dump_tokens.append(f'\tmedian={df.current_ua.median()}')
+        dump_tokens.append(f'\tmin        ={df.current_ua.min()}')
+        dump_tokens.append(f'\tmax        ={df.current_ua.max()}')
+        dump_tokens.append(f'\tmean       ={df.current_ua.mean()}')
+        dump_tokens.append(f'\tmedian     ={df.current_ua.median()}')
+
+        if 'thres' in df.columns:
+            df_lo = df[df.thres < 0]
+            df_mid = df[df.thres == 0]
+            df_hi = df[df.thres > 0]
+
+            dump_tokens.append(f'\tz_thres    ={d['z_thres']}')
+            dump_tokens.append(f'\tlo_mean    ={df_lo.current_ua.mean()}')
+            dump_tokens.append(f'\tlo_count   ={df_lo.current_ua.count()}')
+            dump_tokens.append(f'\tmid_mean   ={df_mid.current_ua.mean()}')
+            dump_tokens.append(f'\tmid_count  ={df_mid.current_ua.count()}')
+            dump_tokens.append(f'\thi_mean    ={df_hi.current_ua.mean()}')
+            dump_tokens.append(f'\thi_count   ={df_hi.current_ua.count()}')
+            dump_tokens.append(f'\ttotal_count={df.current_ua.count()}')
+
 
     dump_str = '\n'.join(dump_tokens)
 
@@ -177,14 +193,6 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
         if plot_ref:
             ref = ref[ref['timestamp_ms'].between(start_ms, end_ms, inclusive='both')]
 
-    dump_data = []
-
-    dump_data.append({'df': meas, 'name': legend_lst[-1] if legend_lst else 'Measurement'})
-    if plot_ref:
-        dump_data.append({'df': ref, 'name': legend_lst[0] if legend_lst else 'Reference'})
-    
-    _dump_meas_info(dump_data, out)
-
     plt.rcParams.update({'font.size': fontsize})
 
     fig, ax = plt.subplots()
@@ -210,6 +218,14 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
         ax.autoscale()
 
     plt.legend(legend_lst, framealpha=0.5)
+
+    dump_data = []
+
+    dump_data.append({'df': meas, 'name': legend_lst[-1] if legend_lst else 'Measurement', 'z_thres': z_thres})
+    if plot_ref:
+        dump_data.append({'df': ref, 'name': legend_lst[0] if legend_lst else 'Reference', 'z_thres': z_thres})
+    
+    _dump_meas_info(dump_data, out)
 
     if out != None:
         fig.set_figheight(EXPORT_FIG_HEIGHT)
