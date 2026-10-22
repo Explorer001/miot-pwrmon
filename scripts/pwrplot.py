@@ -30,6 +30,9 @@ EXPORT_FIG_HEIGHT=8
 
 RZ_FACTOR=0.6745
 
+MEDIAN_AD_FACTOR=1.486
+MEAN_AD_FACTOR=1.253314
+
 def _load_file_miot(file_name: str) -> pd.DataFrame:
     """
     Load the power measurements from the miot power monitor.
@@ -205,9 +208,14 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
 
         meas.plot(ax=ax, x='timestamp_ms', y='current_ua', xlabel='Zeit (ms)', ylabel='Strom (uA)', color='tab:blue')
     else:
-        mad = (meas.current_ua - meas.current_ua.median()).abs().median()
+        div = (meas.current_ua - meas.current_ua.median()).abs().median()
+        mult = MEDIAN_AD_FACTOR
+        if div == 0:
+            print('Using fallback')
+            div = (meas.current_ua - meas.current_ua.median()).abs().mean()
+            mult = MEAN_AD_FACTOR
 
-        meas['current_ua_mod_z'] = (RZ_FACTOR * (meas.current_ua - meas.current_ua.median())) / mad
+        meas['current_ua_mod_z'] = (meas.current_ua - meas.current_ua.median()) / (div * mult)
         meas['thres'] = meas.current_ua_mod_z.apply(lambda x: _z_map(x, z_thres))
 
         xy = np.column_stack([meas.timestamp_ms, meas.current_ua]).reshape(-1, 1, 2)
@@ -218,7 +226,7 @@ def process_files(measurement_name: str, reference_name: str, sync: bool, legend
         line_coll = LineCollection(line_segments, cmap=cmap)
         line_coll.set_array(meas.thres)
 
-        z_off = (z_thres * mad) / RZ_FACTOR
+        z_off = z_thres * div * mult
         thres_lower = meas.current_ua.median() - z_off
         thres_upper = meas.current_ua.median() + z_off
 
